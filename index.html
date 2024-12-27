@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Proxy Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #messageArea {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .sent {
+            background-color: #e3f2fd;
+        }
+        .received {
+            background-color: #f5f5f5;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 8px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Proxy Test</h2>
+    <div>
+        <p>Status: <span id="status">Disconnected</span></p>
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <div id="messageArea"></div>
+    <div>
+        <input type="text" id="messageInput" placeholder="Enter message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let ws = null;
+        const messageArea = document.getElementById('messageArea');
+        const statusElement = document.getElementById('status');
+        const messageInput = document.getElementById('messageInput');
+
+        function connect() {
+            if (ws) {
+                console.log('WebSocket is already connected');
+                return;
+            }
+
+            ws = new WebSocket('ws://localhost:8766');
+
+            ws.onopen = function() {
+                statusElement.textContent = 'Connected';
+                statusElement.style.color = 'green';
+                addMessage('System', 'Connected to WebSocket server');
+            };
+
+            ws.onclose = function() {
+                statusElement.textContent = 'Disconnected';
+                statusElement.style.color = 'red';
+                addMessage('System', 'Disconnected from WebSocket server');
+                ws = null;
+            };
+
+            ws.onmessage = function(event) {
+                addMessage('Received', event.data);
+            };
+
+            ws.onerror = function(error) {
+                addMessage('Error', 'WebSocket error occurred');
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function sendMessage() {
+            if (!ws) {
+                alert('Please connect to the WebSocket server first');
+                return;
+            }
+
+            const message = messageInput.value;
+            if (message) {
+                ws.send(message);
+                addMessage('Sent', message);
+                messageInput.value = '';
+            }
+        }
+
+        function addMessage(type, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type.toLowerCase()}`;
+            messageDiv.textContent = `${type}: ${message}`;
+            messageArea.appendChild(messageDiv);
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        // 允许在输入框中按Enter键发送消息
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
